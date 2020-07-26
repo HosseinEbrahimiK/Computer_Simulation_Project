@@ -1,9 +1,11 @@
-classdef Patient
+classdef Patient < dynamicprops
     properties
         covidTest
         enterTime
         boringTime
+        remainBoringTime
         serivceTime
-        QueueTime
+        queueReceptionTime
+        queueTreatTime
     end
 end
