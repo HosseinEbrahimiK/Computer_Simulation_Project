@@ -4,5 +4,6 @@ classdef room
         queue_covid_neg
         doctors
         earliest_availableTime
+        len_queue
     end
 end

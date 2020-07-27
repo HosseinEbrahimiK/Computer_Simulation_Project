@@ -8,6 +8,7 @@ classdef Patient < dynamicprops
         queueReceptionTime
         queueTreatTime
         receptionDuration
+        finishTime
         done
     end
 end

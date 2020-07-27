@@ -1,15 +1,20 @@
 command = input('Enter input as a list\n');
 
 
-M= command(1);
+M = command(1);
 lambda = command(2);
 alpha = command(3);
 mu = command(4);
 
-N = 2600;
+N = 5000;
 num_of_patient = 0;
 
 rooms = [];
+event = [];
+len_queue = [];
+len_queue_pos = [];
+len_queue_neg = [];
+len_queue_rooms = [];
 
 for i = 1:M
     
@@ -24,7 +29,6 @@ for i = 1:M
         r.earliest_availableTime(j) = 0;
         
     end
-    
     rooms = [rooms, r];
 end
 
@@ -42,6 +46,8 @@ room_num = 1;
     
 sum_queue_reception = 0;
 sum_queue_rooms = zeros(1, length(rooms));
+
+pre_patient = 0;
 
 while num_of_patient < N
     
@@ -70,6 +76,7 @@ while num_of_patient < N
             while time - patient.enterTime > patient.boringTime && isempty(reception_covid_pos) == 0
                 
                 patient.queueReceptionTime = patient.boringTime;
+                patient.finishTime = patient.enterTime + patient.boringTime;
                 finished_patient = [finished_patient, patient];
                 reception_covid_pos = reception_covid_pos(2:length(reception_covid_pos));
                 if isempty(reception_covid_pos) == 0
@@ -82,7 +89,13 @@ while num_of_patient < N
                 reception_covid_pos(1).remainBoringTime = reception_covid_pos(1).boringTime - (time - patient.enterTime);
                 reception_covid_pos(1).queueReceptionTime = time - patient.enterTime;
                 reception_covid_pos(1).receptionDuration = recption_duration;
-                rooms(idx).queue_covid_pos = [rooms(idx).queue_covid_pos, reception_covid_pos(1)];
+                
+                if pre_patient ~= 0
+                    rooms(idx).queue_covid_pos = [rooms(idx).queue_covid_pos, pre_patient];
+                end
+                
+                pre_patient = reception_covid_pos(1);
+                
                 reception_covid_pos = reception_covid_pos(2:length(reception_covid_pos));
             end
             
@@ -93,6 +106,7 @@ while num_of_patient < N
             while time - patient.enterTime > patient.boringTime && isempty(reception_covid_neg) == 0
                 
                 patient.queueReceptionTime = patient.boringTime;
+                patient.finishTime = patient.enterTime + patient.boringTime;
                 finished_patient = [finished_patient, patient];
                 reception_covid_neg = reception_covid_neg(2:length(reception_covid_neg));
                 if isempty(reception_covid_neg) == 0
@@ -105,7 +119,13 @@ while num_of_patient < N
                 reception_covid_neg(1).remainBoringTime = reception_covid_neg(1).boringTime - (time - patient.enterTime);
                 reception_covid_neg(1).queueReceptionTime = time - patient.enterTime;
                 reception_covid_neg(1).receptionDuration = recption_duration;
-                rooms(idx).queue_covid_neg = [rooms(idx).queue_covid_neg, reception_covid_neg(1)];
+                
+                if pre_patient ~= 0
+                    rooms(idx).queue_covid_neg = [rooms(idx).queue_covid_neg, pre_patient];
+                end
+                
+                pre_patient = reception_covid_neg(1);
+                
                 reception_covid_neg = reception_covid_neg(2:length(reception_covid_neg));
             end
             
@@ -120,7 +140,10 @@ while num_of_patient < N
             sick_guy = rooms(room_num).queue_covid_pos(1);
             
             while sick_guy.remainBoringTime < time - (sick_guy.enterTime + sick_guy.queueReceptionTime) && isempty(rooms(room_num).queue_covid_pos) == 0
+                
                 sick_guy.queueTreatTime = sick_guy.remainBoringTime;
+                sick_guy.finishTime = sick_guy.enterTime + sick_guy.queueReceptionTime + sick_guy.receptionDuration + sick_guy.remainBoringTime;
+                
                 finished_patient = [finished_patient, sick_guy];
                 rooms(room_num).queue_covid_pos = rooms(room_num).queue_covid_pos(2:length(rooms(room_num).queue_covid_pos));
                 
@@ -134,6 +157,8 @@ while num_of_patient < N
                 rooms(room_num).earliest_availableTime(doctor_idx(room_num)) = time + sick_guy.serviceTime;
                 sick_guy.queueTreatTime = time - (sick_guy.enterTime + sick_guy.queueReceptionTime);
                 rooms(room_num).queue_covid_pos = rooms(room_num).queue_covid_pos(2:length(rooms(room_num).queue_covid_pos));
+
+                sick_guy.finishTime = sick_guy.enterTime + sick_guy.queueReceptionTime + sick_guy.receptionDuration + sick_guy.queueTreatTime + sick_guy.serviceTime;
                 sick_guy.done = true;
                 finished_patient = [finished_patient, sick_guy];
                 
@@ -143,7 +168,10 @@ while num_of_patient < N
             sick_guy = rooms(room_num).queue_covid_neg(1);
             
             while sick_guy.remainBoringTime < time - (sick_guy.enterTime + sick_guy.queueReceptionTime) && isempty(rooms(room_num).queue_covid_neg) == 0
+                
                 sick_guy.queueTreatTime = sick_guy.remainBoringTime;
+                sick_guy.finishTime = sick_guy.enterTime + sick_guy.queueReceptionTime + sick_guy.receptionDuration + sick_guy.remainBoringTime;
+
                 finished_patient = [finished_patient, sick_guy];
                 rooms(room_num).queue_covid_neg = rooms(room_num).queue_covid_neg(2:length(rooms(room_num).queue_covid_neg));
                 
@@ -157,6 +185,8 @@ while num_of_patient < N
             rooms(room_num).earliest_availableTime(doctor_idx(room_num)) = time + sick_guy.serviceTime;
             sick_guy.queueTreatTime = time - (sick_guy.enterTime + sick_guy.queueReceptionTime);
             rooms(room_num).queue_covid_neg = rooms(room_num).queue_covid_neg(2:length(rooms(room_num).queue_covid_neg));
+            
+            sick_guy.finishTime = sick_guy.enterTime + sick_guy.queueReceptionTime + sick_guy.receptionDuration + sick_guy.queueTreatTime + sick_guy.serviceTime;
             sick_guy.done = true;
             finished_patient = [finished_patient, sick_guy];
 
@@ -197,5 +227,11 @@ while num_of_patient < N
     
     for r = 1:length(rooms)
         sum_queue_rooms(r) = sum_queue_rooms(r) + ((length(rooms(r).queue_covid_pos) + length(rooms(r).queue_covid_neg)) * (time - pre_time));
+        rooms(r).len_queue = [rooms(r).len_queue, length(rooms(r).queue_covid_pos) + length(rooms(r).queue_covid_neg)];
     end
+    
+    event = [event, time];
+    len_queue = [len_queue, length(reception_covid_pos) + length(reception_covid_pos)];
+    len_queue_pos = [len_queue_pos, length(reception_covid_pos)];
+    len_queue_neg = [len_queue_neg, length(reception_covid_neg)];
 end
