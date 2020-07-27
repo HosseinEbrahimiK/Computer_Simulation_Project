@@ -4,8 +4,10 @@ classdef Patient < dynamicprops
         enterTime
         boringTime
         remainBoringTime
-        serivceTime
+        serviceTime
         queueReceptionTime
         queueTreatTime
+        receptionDuration
+        done
     end
 end
