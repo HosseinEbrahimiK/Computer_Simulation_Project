@@ -22,6 +22,9 @@ queue_time_neg = [];
 
 arr = [];
 
+room_queue = [];
+time_room_queue = [];
+
 period = 100;
 bins = zeros(1, floor(time / period));
 bins_pos = zeros(1, floor(time / period));
@@ -170,5 +173,18 @@ subplot(3, 1, 3);
 fig3 = plot(event, len_queue_neg);
 figure;
 
+pre_t = event(1);
+
+for t = 1:length(event)
+    if rem(event(t), 500) == 0
+        room_queue = [room_queue, mean(rooms(1).len_queue(pre_t:t))];
+        time_room_queue = [time_room_queue, (event(t) + event(pre_t)) / 2];
+        pre_t = t;
+    end
+end
+
 fig4 = plot(event, rooms(1).len_queue);
+figure;
+
+fig5 = plot(time_room_queue, room_queue);
 figure;
